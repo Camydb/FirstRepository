@@ -5,11 +5,6 @@ Created on Wed Mar  1 14:34:46 2023
 @author: Administrator
 """
 
-import openai
-
-
-#%%%%%%%%%%%%%%%%%
-
 news='''
 People look at signs posted outside of an entrance to Silicon Valley Bank in Santa Clara, Calif., Friday, March 10, 2023. From winemakers in California to startups across the Atlantic Ocean, companies are scrambling to figure out how to manage their finances after their bank, Silicon Valley Bank, suddenly shut down on Friday. The meltdown means distress not only for businesses but also for all their workers whose paychecks may get tied up in the chaos. (AP Photo/Jeff Chiu)
 
@@ -81,11 +76,26 @@ Associated Press Writers Hope Yen in Washington and Jennifer McDermott in Provid
 '''
 
 
+import requests
 
+url = 'https://api-free.deepl.com/v2/translate'
+auth_key = 'df628d3e-e50e-be55-6ad3-a43df1fbf411:fx'
+text = 'Hello, world!'
+target_lang = 'ZH'
+
+payload = {'text': news, 'target_lang': target_lang}
+headers = {'Authorization': f'DeepL-Auth-Key {auth_key}'}
+
+response = requests.post(url, data=payload, headers=headers)
+
+print(response.json())
+
+#%%%%%%%%%%%%%%
 
 # import os
 import openai
-
+# openai.api_key = os.getenv("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")
+# openai.api_key = "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"
 
 completion = openai.ChatCompletion.create(
     model="gpt-3.5-turbo",
@@ -104,7 +114,7 @@ print(completion.choices[0].message.content)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Note: you need to be using OpenAI Python v0.27.0 for the code below to work
 import openai
-
+openai.api_key = "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"
 openai.ChatCompletion.create(
   model="gpt-3.5-turbo",
   messages=[
@@ -120,7 +130,7 @@ print(completion.choices[0].message)
 #%%%%%%%%%%%%%%%%%%%%
 
 import openai
-
+openai.api_key = "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"
 completion = openai.ChatCompletion.create(
   model="gpt-3.5-turbo", 
   messages=[{"role": "user", "content": "Tell the world about the ChatGPT API in the style of a pirate."}]
@@ -133,7 +143,8 @@ print(completion.choices[0].message)
 import os
 import openai
 
-
+# openai.api_key = os.getenv("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")
+openai.api_key = "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"
 
 response = openai.Completion.create(
   model="text-davinci-003",
@@ -154,7 +165,7 @@ print(message)
 import os
 import openai
 
-
+openai.api_key = "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"
 
 response = openai.Completion.create(
   model="text-davinci-003",
@@ -175,7 +186,7 @@ print(message)
 # Note: you need to be using OpenAI Python v0.27.0 for the code below to work
 import openai
 
-
+openai.api_key = "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"
 
 response = openai.ChatCompletion.create(
   model="gpt-3.5-turbo",
@@ -187,7 +198,7 @@ response = openai.ChatCompletion.create(
     ]
 )
 
-msg = response['choices'][0]['message']['content']
+msg = response['choices'][0]['message']['content'].text
 
 print(msg)
 
@@ -210,7 +221,8 @@ print(new[1])
 import os
 import openai
 
-
+# openai.api_key = os.getenv("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")
+openai.api_key = "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"
 
 # model_engine = "text-davinci-002"
 model_engine = "text-davinci-003"
@@ -241,19 +253,15 @@ print(message)
 import os
 import openai
 
-
+# openai.api_key = os.getenv("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")
+# openai.api_key = "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"
 # 设置请求参数
 ##问答
 model_engine = "text-davinci-002"
 
-# proxies = {'http': "http://127.0.0.1:4780",'https': "http://127.0.0.1:4780"}
-# proxies = {'http': "http://172.16.2.60:4780",'https': "http://172.16.2.60:4780"}
-
-# openai.proxy = proxies
-
 prompt = "请用‘盛夏’、‘蝉鸣’、‘少年’、‘橘子味汽水’四个词语造句"
 
-completions = openai.Completion.create(
+# completions = openai.Completion.create(
     engine=model_engine,
     prompt=prompt,
     max_tokens=3000,
@@ -291,48 +299,51 @@ message = completions.choices[0].text
 
 print(message)
 
-
-#%%%%%%%%%%%%%%
-
+#%%%%%%%%%%%%%%%%%%%%%%%
 
 import openai
-def gpt_chat(content):
-    """
-    输入：含有标题和时间的df
-    输出：总结（包含标题，三句话总结等）及新闻背景
-    """
+# openai.api_key = "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"
+
+response = openai.Image.create(
+  prompt="AI",
+  n=1,
+  size="1024x1024"
+)
+image_url = response['data'][0]['url']
+print(image_url)
 
 
-    message = [{"role": "system", "content": "You are an experienced news editor and your readers are first-year college students."},
-          {"role": "user", "content": """As an experienced news editor, you need to summarize news based on various news outlets' titles and your intended readers are first-year college students. Output three results: 1. News summarized in a few sentences. 2. News summarized into one short news title. 3. Express the central topic in no more than two words. 4. Where the news happened
-    Desired Output Format:
-    1. Summary: -||-
-    2. Title: -||-
-    3. Topic: -||-
-    4. Location: -||-
-    News Input presented in table format:'''{}'''
-              """}]
+#%%%%%%%%%%%%%%%%%%
+import requests
+name = image_url.split('?')[0].split('/')[-1]
+print(name)
+
+response = requests.get(image_url)
+
+
+with open("D:/WS8801/img/"+name, 'wb') as f:
+    f.write(response.content)
     
-    # 输出总结
-    message[-1]["content"] = message[-1]["content"].format(content)
-    completion = openai.ChatCompletion.create(
-      model="gpt-3.5-turbo",
-      messages=message,
-      temperature = 0
-    )
-    summary = completion.choices[0].message.content.replace('\n','')
+#%%%%%%%%%%%%%%%%%%%%
 
-    # 输出新闻背景
-    message.append({"role": "assistant", "content": summary})
-    message.append({"role": "user", "content": "Please provide background information about this news event that will help readers better understand news stories and keep them informed about current events. "})
-    completion = openai.ChatCompletion.create(
-          model="gpt-3.5-turbo",
-          messages=message,
-          temperature = 0
-        )
-    context = completion.choices[0].message.content.replace('\n','')
+pro_mpt = 'AI'
+response = openai.Image.create(
+  prompt=pro_mpt,
+  n=1,
+  size="1024x1024"
+)
+image_url = response['data'][0]['url']
+print(image_url)
 
-    return summary, context
-    
-summary, context = gpt_chat(df[["title", "time"]])
-print(summary, context, sep = "\n\n")
+#%%%%%%%%%%%%%%%
+name = image_url.split('?')[0].split('/')[-1]
+print(name)
+
+#%%%%%%%%%%%%
+response = requests.get(image_url)
+path = "D:/WS8801/img/"+name
+print(path)
+
+path = 'D:/WS8801/img/img-tgToiuc3lUr1sn2B2wymzB5m.png'
+with open(path, 'wb') as f:
+    f.write(response.content)

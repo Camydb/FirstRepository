@@ -6,6 +6,7 @@ Created on Mon Mar  6 15:10:06 2023
 """
 
 import pymysql
+ 
 # 打开数据库连接
 # db = pymysql.connect("120.48.49.157:3306","remote","remote123456","test_1" )
 db = pymysql.connect(
@@ -14,33 +15,46 @@ db = pymysql.connect(
     user='root',    #在这里输入用户名
     password='root123321',     #在这里输入密码
     charset='utf8mb4' ,
-    database='GOOGLE'
+    database='TX_NEWS'
     ) #连接数据库
+
+
 # 使用 cursor() 方法创建一个游标对象 cursor
 cursor = db.cursor()
+
+
 # SQL 查询语句，查询user表
-sql = "select * from G_NEWS" 
+sql = "select BEIZ from SHUM_03" 
+
 cursor.execute(sql)
+
 #这是查询表中所有的数据
 rest=cursor.fetchall()
-print(rest)
+
+
+HTML = 'https://new.qq.com/omn/20230225/20230225V03L7400.html'
+yuan = (HTML,)
+if yuan in rest:
+    print('存在')
 # c.execute("SELECT DISTINCT * FROM 'TX_0227';")
 # print ("数据表去重成功")
+# c.execute('''CREATE TABLE TX_0301
+#         (BIAOT           TEXT    NOT NULL,
+#         ZUOZ            TEXT    NOT NULL,
+#         PINGL           TEXT    ,
+#         NEIR           TEXT    ,
+#         TIME           TEXT    NOT NULL,
+#         FENL           TEXT    NOT NULL,
+#         ZURL           TEXT    NOT NULL,
+#         BEIZ           TEXT);''')
+# print ("数据表创建成功")
+
+
 # 关闭数据库连接
 cursor.close()  
 db.close()
 
 #%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-# var ws = new WebSocket('ws://114.132.77.224:8080');
-# ws.onopen = function(event){console.log("CONNECT")};
-# ws.onmessage = function(event){console.log(event.data)};
-# ws.onerror = function(event){console.log(event)};
-
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%
 import random
 import linecache
 # with open("D:/yan.txt", "r", encoding='utf-8') as f:  #打开文本
@@ -90,22 +104,6 @@ conn.execute(
 conn.commit()
 conn.close()
 
-
-
-CREATE TABLE "GL_NEWS" (
-	"TITLE"	TEXT NOT NULL UNIQUE,
-	"AUTHOR"	TEXT,
-	"CONTENT"	TEXT,
-	"TIME"	TEXT NOT NULL,
-	"SAVE_TIME"	TEXT NOT NULL,
-	"THEME"	TEXT,
-	"THEME_URL"	TEXT,
-	"GPT3_TITLE"	TEXT,
-	"GPT3_TEXT"	TEXT,
-	"NEWS_URL"	TEXT,
-	"PIC_URL"	TEXT,
-	"REMARKS"	TEXT
-)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%
 

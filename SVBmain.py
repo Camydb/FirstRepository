@@ -9,7 +9,7 @@ Created on Mon Mar 13 13:54:35 2023
 import openai
 
 
-
+# openai.api_key = "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"
 
 completion=openai.ChatCompletion.create(
   model="gpt-3.5-turbo",
@@ -46,7 +46,6 @@ print(completion.choices[0].message.content)
 ## 用Article爬取单条新闻
 from newspaper import Article
 import sqlite3
-from pymysql.converters import escape_string
 import datetime
 import requests
 from bs4 import BeautifulSoup
@@ -55,9 +54,9 @@ import time
 import openai
 
 
-
 def gpt(text):
-   
+    # openai.api_key = os.getenv("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")
+    openai.api_key = "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"
 
     completion = openai.ChatCompletion.create(
       model="gpt-3.5-turbo",
@@ -91,7 +90,7 @@ def save(db,BIAOT,ZUOZ,PINGL,NEIR,TIME,ZURL,BEIZ,GPT3):
     conn.close()
 
 
-def get_news(url,tx):
+def get_news(url):
     # 目标新闻网址
     # goo = 'https://news.google.com/articles/CBMiUWh0dHBzOi8vd3d3LmNic25ld3MuY29tL25ld3Mvc2lsaWNvbi12YWxsZXktYmFuay1mYWlsdXJlLXdvcmxkd2lkZS1yZXBlcmN1c3Npb25zL9IBVWh0dHBzOi8vd3d3LmNic25ld3MuY29tL2FtcC9uZXdzL3NpbGljb24tdmFsbGV5LWJhbmstZmFpbHVyZS13b3JsZHdpZGUtcmVwZXJjdXNzaW9ucy8?hl=en-US&amp;gl=US&amp;ceid=US%3Aen'
     # url = 'https://www.cbsnews.com/news/silicon-valley-bank-failure-worldwide-repercussions/'
@@ -107,84 +106,43 @@ def get_news(url,tx):
     # print(news.publish_date) # 发布日期
     news_text = news.text.replace("\"","\'")
     news_title = news.title.replace("\"","\'")
-    
-    news_text = escape_string(news_text)
-    news_title = escape_string(news_title)
-    
     # news_authors = news.authors.replace("\"","\'")
     
     gpt_text = gpt(news_text)
     try:
-        save("D:/T_py/GOOGLE.db",news_title,news.authors,tx,news_text,'',url,news.top_image,gpt_text)
+        save("D:/TenCen/GOOGLE.db",news_title,news.authors,'',news_text,'',url,news.top_image,gpt_text)
     except Exception as e:
         print(e)
 
-
-def twitter(soup):
-    title = soup.title.text
-    artical=soup.find_all(attrs={'class':'ifw3f'})
-    for para in artical:
-        fu = para.parent
-        
-        di = fu.find(attrs={'class':'js5zDf'})
-        print(di.text)
-        
-        print(para.text)
-        pt = para.text.replace("\"","\'")
-        
-        xiong = fu.find(attrs={'class':'eGzQsf'})
-        tm = xiong.time.text
-        if len(tm)<9:
-            now = datetime.datetime.now().strftime('%m/%d/23')
-            tm = now+' '+tm
-        print(tm)
-        
-        try:
-            conn = sqlite3.connect("D:/T_py/GOOGLE.db")
-            # print(db)
-            stime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            conn.execute(
-                '''INSERT INTO Twitter (PINGL,PEOPLE,TIME,BJ_TIME,CLASS) VALUES ("{}","{}","{}","{}","{}")'''.format(pt,di.text,tm,stime,title));
-            conn.commit()
-            print ("记录插入成功!")
-            conn.close()
-        except Exception as e:
-            print(e)
-        
-        print('-----------------')
-
-
-
-
-url = 'https://news.google.com/stories/CAAqNggKIjBDQklTSGpvSmMzUnZjbmt0TXpZd1NoRUtEd2lEdDVYaUJoSE1tQ3JFdEtaQXBTZ0FQAQ?hl=en-US&gl=US&ceid=US%3Aen'
+# =============================================================================
 # url= 'https://news.google.com/stories/CAAqNggKIjBDQklTSGpvSmMzUnZjbmt0TXpZd1NoRUtEd2lRci1EV0JoRkJvMkVtWVI3UWRDZ0FQAQ?hl=en-US&gl=US&ceid=US%3Aen'
-# url = 'https://news.google.com/stories/CAAqNggKIjBDQklTSGpvSmMzUnZjbmt0TXpZd1NoRUtEd2laZ2ZmdkJoR2NwNFNnWGVkcmhDZ0FQAQ?hl=en-US&gl=US&ceid=US%3Aen&so=0'
-# url = 'https://news.google.com/stories/CAAqNggKIjBDQklTSGpvSmMzUnZjbmt0TXpZd1NoRUtEd2pKdGVudkJoR0p6cmR2cEhUWl9pZ0FQAQ?hl=en-US&gl=US&ceid=US%3Aen'
-# wbdata = requests.get(url,headers=request_header(),proxies=proxies)
-wbdata = requests.get(url,headers=request_header())
-if wbdata.status_code == 200:
-    # data = response.json()
-    # 对获取到的文本进行解析
-    soup = BeautifulSoup(wbdata.text,'lxml')
-    # print(soup.title.text)
-    # 获取文章 内容
-    tx = soup.title.text
-    print(tx)
-    twitter(soup)
-    
-    js = soup.find(attrs={'jsname':'gKDw6b'})
-    uurl = js.find_all(attrs={'class':'VDXfz'})
-    for uu in uurl:
-        try:
-            surl = 'https://news.google.com/'+uu['href'][2:]
-            print(surl)
-            get_news(surl,tx)
-            # time.sleep(3)
-            # print(uu.href)
-        except Exception as e:
-            print(e)
-        print('-----------------')
+# # wbdata = requests.get(url,headers=request_header(),proxies=proxies)
+# wbdata = requests.get(url,headers=request_header())
+# if wbdata.status_code == 200:
+#     # data = response.json()
+#     # 对获取到的文本进行解析
+#     soup = BeautifulSoup(wbdata.text,'lxml')
+#     # print(soup.title.text)
+#     # 获取文章 内容
+#     artical=soup.find_all(attrs={'class':'ifw3f'})
+#     # for para in artical:
+#     #     print(para.text)
+#     #     print('-----------------')
+#     js = soup.find(attrs={'jsname':'gKDw6b'})
+#     uurl = js.find_all(attrs={'class':'VDXfz'})
+#     for uu in uurl:
+#         try:
+#             surl = 'https://news.google.com/'+uu['href'][2:]
+#             print(surl)
+#             get_news(surl)
+#             # time.sleep(3)
+#             # print(uu.href)
+#         except Exception as e:
+#             print(e)
+# =============================================================================
 
+# us = 'https://www.seattletimes.com/business/despite-rescue-seattle-startups-and-banks-face-svb-blowback/'
+# get_news(us)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -456,7 +414,7 @@ print(soup.title.text)
 
 
 import openai
-
+openai.api_key = "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"
 
 completion = openai.ChatCompletion.create(
   model="gpt-3.5-turbo",

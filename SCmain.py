@@ -34,24 +34,6 @@ from selenium.webdriver import ChromeOptions
 # =============================================================================
 
 
-#%%%%%%%%%%%%%%%%%%%%%
-
-
-import requests
-
-url = 'http://120.48.49.157:5000/change_user_info?userID=Lw7CH4upxDy7tzDS9XChsg&user_name=大明' # 替换为您要发送图片的 URL
-
-# with open('D:/image/aa.jpg', 'rb') as file:
-#     response = requests.post(url, files={'file': file,"question":"QQQQQQQQQQQQQQQQQQ"})
-
-data = {
-    # 'question': 'This is an image',
-    'file': ('image.jpg', open('D:/image/aa.jpg', 'rb'), 'image/jpeg')
-}
-
-response = requests.post(url, files=data)
-
-print(response.text) # 输出服务器返回的响应内容
 
 #%%%%%%%%%%%%%%%%%%%%
 
@@ -545,3 +527,20 @@ if wbdata.status_code == 200:
 
         content+=para.text
     print(type(content))
+    
+#%%%%%%%%%%%%%%%%%%%%%
+
+
+import requests
+
+url = 'https://api-free.deepl.com/v2/translate'
+auth_key = 'df628d3e-e50e-be55-6ad3-a43df1fbf411:fx'
+text = 'Hello, world!'
+target_lang = 'ZH'
+
+payload = {'text': text, 'target_lang': target_lang}
+headers = {'Authorization': f'DeepL-Auth-Key {auth_key}'}
+
+response = requests.post(url, data=payload, headers=headers)
+print(response.text)
+# print(response.json()['translations'][0]['text'])
