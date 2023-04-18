@@ -6,8 +6,7 @@ Created on Tue Mar  7 17:36:33 2023
 """
 import pymysql
 import flask,json
-from flask import request,send_file,jsonify,make_response
-# import json
+from flask import request,send_file,make_response#jsonify
 import shortuuid
 import re
 import random
@@ -16,6 +15,7 @@ import string
 import time
 from datetime import datetime
 import urllib.parse
+import os
 
 # from sqlalchemy import create_engine
 '''
@@ -28,8 +28,8 @@ server = flask.Flask(__name__)
 Pattern1 = re.compile(r'^1[34578]\d{9}$')
 
 
-HOST="120.48.49.157"
-# HOST="127.0.0.1"
+# HOST="120.48.49.157"
+HOST="127.0.0.1"
 
 # server.config['JSON_AS_ASCII'] = False
 # @server.route()可以将普通函数转变为服务 的路径、请求方式
@@ -43,10 +43,7 @@ def get_share(newsID):
         charset='utf8mb4' ,
         database='USER'
         ) #连接数据库
-    # 使用 cursor() 方法创建一个游标对象 cursor
-    # cursor = db.cursor()
-    # 使用pandas的read_sql函数读取数据
-    # if class_n == 'news' or class_n == 'talk' or class_n == 'like_discuss':
+
     df = pd.read_sql('''SELECT user_ID,news_ID,share_ID FROM user_share WHERE news_ID= "{}"  '''.format(newsID), db) #收藏的新闻，话题，评论
     db.close()
     df = df.drop_duplicates('share_ID')#.sort_index()
@@ -79,13 +76,10 @@ def get_top():
     my_list = list(counts.iloc[5:].index.tolist())
     random.shuffle(my_list)
     
-
-
     df2 = df[df['S_TIME'] < three_days_ago]
-    my_list2 = list(df2['TH_ID'])
-
+    # my_list2 = list(df2['TH_ID'])
+    my_list2 = list(set(list(df2['TH_ID'])))
     random.shuffle(my_list2)
-    
     return(top+my_list+my_list2)
 
 def get_now_time():
@@ -205,6 +199,130 @@ def get_act(search_id,class_n):
         print('False')
         db.close()
         return 0
+
+@server.route('/chuan', methods=['get'])
+def chuan():
+    '''
+        http://127.0.0.1:5000/chuan?name=safsafsdfsdfsd.png
+    http://120.48.49.157:5000/chuan?name=safsafsdfsdfsd.png
+    '''
+    name = request.values.get('name')
+    print(name)
+    try:
+        file = request.files['file']
+        path = '/root/img/{}'.format(name)
+        file.save(path)  # 保存上传的文件到指定路径
+        print("上传成功")
+        project = {
+           "code": "OK",
+           "msg": "上传成功"
+        }
+        response = json.dumps(project)  # 将python的字典转换为json字符串
+        return response,200,{"Content-Type":"application/json"}
+    except Exception as e:
+        print(e)
+        print("上传失败")
+        project = {
+           "code": "False",
+           "msg": "上传失败",
+           "result":str(e)
+        }
+        response = json.dumps(project)  # 将python的字典转换为json字符串
+        return response,400,{"Content-Type":"application/json"}
+
+
+
+@server.route('/images/<name>')
+def get_image(name):
+    """
+    Endpoint to retrieve an image by name
+    """
+    image_path = os.path.join("/root/img", name)
+    if os.path.isfile(image_path):
+        return send_file(image_path, mimetype='image/png')
+    else:
+        # return jsonify({"error": "Image not found"}), 404
+        project = {
+           "code": "False",
+           "msg": "no message",
+           "result":"Image not found"
+        }
+        response = json.dumps(project)  # 将python的字典转换为json字符串
+        return response,400,{"Content-Type":"application/json"}
+
+
+@server.route('/context', methods=['get'])
+def context():
+    '''
+        http://127.0.0.1:5000/context?TH_ID=3wPcRUB6R
+    http://120.48.49.157:5000/context?TH_ID=3wPcRUB6R
+    '''
+    TH_ID = request.values.get('TH_ID')
+    try:
+        # save_time,stime = get_now_time()
+        conn = pymysql.connect(
+            host=HOST, 
+            port=3306,
+            user='root',    #在这里输入用户名
+            password='root123321',     #在这里输入密码
+            charset='utf8mb4' ,
+            database='GOOGLE'
+            ) #连接数据库
+        cur = conn.cursor()
+        
+        cur.execute('SELECT context,THEME,KEY_WORD,context_ZH,TH_ZH,KW_ZH FROM GL_NEWS WHERE TH_ID = "{}" '.format(TH_ID))
+        rows = cur.fetchall()
+        # for row in rows:
+        #     if row[0] == userID:
+        #         path = row[1]
+        #         nick_name = urllib.parse.quote(row[2])
+        
+        if rows[0][0] is None:
+            ct = ''
+            ct_zh = ''
+        else:
+            ct = rows[0][0]
+            ct_zh = rows[0][3]
+
+        
+        conn.close()
+        
+        project = {
+           "code": "OK",
+           "msg": 'context',
+           "result":{
+               "newsID":TH_ID,
+               "context":ct,
+               "context_ZH":ct_zh,
+               "Key_word":rows[0][2],
+               "KW_ZH":rows[0][5],
+               "like":False,
+               "dislike":False,
+               "like_sum":0,
+               "discuss_sum":0,
+               "share_sum":0,
+               "dislike_sum":0,
+               "share":{
+                   "title":rows[0][1],
+                   "title_ZH":rows[0][4],
+                   "content":ct,
+                   "context_ZH":ct_zh,
+                   "url":"https://www.newzsup.com/"
+                   }
+           
+            }
+        }
+        response = json.dumps(project)  # 将python的字典转换为json字符串
+        return response,200,{"Content-Type":"application/json"}
+    except Exception as e:
+        print(e)
+        project = {
+           "code": "False",
+           "msg": "no message",
+           "result":str(e)
+        }
+        response = json.dumps(project)  # 将python的字典转换为json字符串
+        return response,400,{"Content-Type":"application/json"}
 
 
 @server.route('/share', methods=['get'])
@@ -594,8 +712,8 @@ def Projectlist_13():
 @server.route('/upload', methods=['POST'])
 def upload():
     '''
-        http://127.0.0.1:5000/upload
-    http://120.48.49.157:5000/upload
+        http://127.0.0.1:5000/upload?question=scscscscsc&userID=vdfvfdvfdv&class_n=context
+    http://120.48.49.157:5000/upload?question=scscscscsc&userID=vdfvfdvfdv&class_n=context
     '''
     save_time,stime = get_now_time()
     path_list = []
@@ -622,6 +740,7 @@ def upload():
     # question = request.files['question']
     question = request.values.get('question')
     userID = request.values.get('userID')
+    class_n = request.values.get('class_n')
     # save_time,stime = get_now_time()
     
     conn = pymysql.connect(
@@ -638,8 +757,8 @@ def upload():
         
         f_back_ID = shortuuid.ShortUUID().random(length=6)
         cur.execute(
-            '''INSERT INTO user_feedback (user_ID,f_back_ID,text,image,time,stime) 
-            VALUES ("{}","{}","{}","{}","{}","{}")'''.format(userID,f_back_ID,question,path_list,save_time,stime));
+            '''INSERT INTO user_feedback (user_ID,f_back_ID,text,image,time,stime,class_n) 
+            VALUES ("{}","{}","{}","{}","{}","{}","{}")'''.format(userID,f_back_ID,question,path_list,save_time,stime,class_n));
         conn.commit()
         print ("反馈成功!")
         project = {
@@ -810,7 +929,7 @@ def Projectlist_12():
             response = json.dumps(project)  # 将python的字典转换为json字符串
             return response,404,{"Content-Type":"application/json"}
         
-    if class_n == 'talk':
+    if class_n == 'talk' or class_n == 'context':
         if is_dislike==1:
             try:
                 cur.execute(
@@ -841,7 +960,7 @@ def Projectlist_12():
                 return response,405,{"Content-Type":"application/json"}
         elif is_dislike==0:
             
-            sql = '''delete from user_dislike where user_ID="{}" and discuss_ID="{}" '''.format(userID,newsID)
+            sql = '''delete from user_dislike where user_ID="{}" and discuss_ID="{}" and class_n="{}"'''.format(userID,newsID,class_n)
             cur.execute(sql)
             conn.commit()
             
@@ -891,6 +1010,7 @@ def Projectlist_10():
     
     newsID = request.values.get('newsID')
     userID = request.values.get('userID')
+    class_n = request.values.get('class_n')
     
     like_news,like_talk,like_discuss = get_like(userID)
     dislike_news,dislike_talk,dislike_discuss = get_dislike(userID)
@@ -908,7 +1028,7 @@ def Projectlist_10():
     # SQL 查询语句，查询user表
     # sql = "select THEME,GPT3_TITLE,KEY_WORD from GL_NEWS" 
     try:
-        df = pd.read_sql('''select * from user_discuss where news_ID = "{}" '''.format(newsID) , db)
+        df = pd.read_sql('''select * from user_discuss where news_ID = "{}" and class_n = "{}" '''.format(newsID,class_n) , db)
         db.close()
         df = df.sort_values('S_time', ascending=False).drop_duplicates('discuss_ID')#.sort_index()
         
@@ -1433,7 +1553,7 @@ def Projectlist7():
             }
             response = json.dumps(project)  # 将python的字典转换为json字符串
             return response,404,{"Content-Type":"application/json"}
-    if class_n == 'talk':
+    if class_n == 'talk' or class_n == 'context':
         if is_like==1:
             try:
                 cur.execute(
@@ -1442,7 +1562,7 @@ def Projectlist7():
                 print ("记录插入成功!")
                 project = {
                    "code": "OK",
-                   "msg": '话题收藏成功',
+                   "msg": '收藏成功',
                    "result":{
                     "userID":userID,
                     "talkID":newsID,
@@ -1465,7 +1585,7 @@ def Projectlist7():
                 return response,405,{"Content-Type":"application/json"}
         elif is_like==0:
             
-            sql = '''delete from user_like where user_ID="{}" and news_ID="{}" '''.format(userID,newsID)
+            sql = '''delete from user_like where user_ID="{}" and news_ID="{}" and class_n="{}"'''.format(userID,newsID,class_n)
             cur.execute(sql)
             conn.commit()
             
@@ -2110,7 +2230,7 @@ def G_topic_today():
         # cursor = db.cursor()
         # SQL 查询语句，查询user表
         # sql = "select THEME,GPT3_TITLE,KEY_WORD from GL_NEWS" 
-        df = pd.read_sql("select THEME,GPT3_TITLE,KEY_WORD,S_TIME,TIME,TH_ID,TH_ZH,GT_ZH,KW_ZH from GL_NEWS" , db)
+        df = pd.read_sql("select THEME,GPT3_TITLE,KEY_WORD,S_TIME,TIME,TH_ID,TH_ZH,GT_ZH,KW_ZH,AI_img,PIC_URL from GL_NEWS" , db)
         db.close()
         df = df.sort_values('S_TIME', ascending=False).drop_duplicates('TH_ID')#.sort_index()
         # print(df)
@@ -2122,7 +2242,7 @@ def G_topic_today():
         
         # df = df.reindex(order)
         
-        page_size = 5  # 每页条数
+        page_size = 10  # 每页条数
         total_items = df.shape[0]  # 总条数
         total_pages = (total_items + page_size - 1) // page_size  # 总页数
     
@@ -2151,6 +2271,10 @@ def G_topic_today():
                 # b = row['THEME'].replace('Google News -','').replace('- Overview','')
                 # c = row['TH_ZH'].replace('谷歌新闻-','').replace('-概述','')
                 # st = get_max_time(b)
+                if row['AI_img'] =='':
+                    aimg = ''
+                else:
+                    aimg = "http://120.48.49.157:5000/images/"+row['AI_img']
                 news = {
                     "theme":row['THEME'],
                     "sum_title":row['GPT3_TITLE'],
@@ -2161,6 +2285,7 @@ def G_topic_today():
                     "TH_ZH":row['TH_ZH'],
                     "GT_ZH":row['GT_ZH'],
                     "KW_ZH":row['KW_ZH'],
+                    "AI_img":aimg,
                     "like":like,
                     "dislike":dislike,
                     "like_sum":like_sum,
@@ -2467,7 +2592,7 @@ def P_twitter():
         
 
 if __name__ == "__main__":
-    server.run()
+    # server.run()
 
-    # server.run(host="192.168.0.4", port=5000, debug=True)
+    server.run(host="192.168.0.4", port=5000, debug=True)
     #server.run(host="192.168.0.4", port=5000, debug=True,ssl_context=('server.crt','server.key'))
