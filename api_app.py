@@ -24,56 +24,113 @@ from flask import Flask, render_template, request, redirect
 import random
 import linecache
 import json
+import os
+from flask import Flask, render_template, request, redirect, url_for, session
+from flask_mysqldb import MySQL
+import MySQLdb.cursors
+import re
+import cred
 app = Flask(__name__)
  
- 
+# Enter your database connection details below
+app.config['SECRET_KEY'] = cred.secret_key
+app.config['MYSQL_HOST'] = cred.mysql_host
+app.config['MYSQL_DB'] = cred.mysql_db
+app.config['MYSQL_USER'] = cred.mysql_user
+app.config['MYSQL_PASSWORD'] = cred.mysql_password
+app.config['MYSQL_CURSORCLASS'] = cred.mysql_cursorclass
+
+# Intialize MySQL
+mysql = MySQL(app)
+
  
 # 【2、路由和视图函数】
 # 客户端发送url给web服务器，web服务器将url转发给flask程序实例，程序实例
 # 需要知道对于每一个url请求启动哪一部分代码，所以保存了一个url和python函数的映射关系。
 # 处理url和函数之间关系的程序，称为路由
 # 在flask中，定义路由最简便的方式，是使用程序实例的app.route装饰器，把装饰的函数注册为路由
- 
- 
-@app.route('/privacy')
-def cdc_say():
-    return render_template('privacy.html')
-    # return "Hello, Flask !"
- 
-@app.route('/cancel')
-def angela_say():
-    return render_template('cancel.html')
- 
-@app.route('/user')
-def alex_say():
-    return render_template('user.html')
- 
-@app.route('/code')
-def User_Agent():
-    txt = open(r'/root/yan.txt', 'rb')
-    data = txt.read().decode('utf-8')  # python3一定要加上这句不然会编码报错！
-    txt.close()
+@app.route('/')
+def home():
+    # 获取当前页码和每页显示记录数
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
 
-    # 获取txt的总行数！
-    n = data.count('\n')
-    #print("总行数", n)
-    # 选取随机的数
-    i = random.randint(1, (n + 1))
-    #print("本次使用的行数", i)
-    ###得到对应的i行的数据
-    line=linecache.getline(r'/root/yan.txt', i)
-    #print(line)
+    # 连接数据库并查询记录
+    cur = mysql.connection.cursor()
+    sql = '''select NEWS_ID,TITLE,AUTHOR,CONTENT,TIME,S_TIME,SAVE_TIME,THEME,KEY_WORD,THEME_URL,GPT3_TITLE,GPT3_TEXT,NEWS_URL,PIC_URL,REMARKS,TH_ID,T_ZH,TH_ZH,KW_ZH,GT_ZH,ZH_CN,context,context_ZH,AI_img,CT_ID,img,img_name from GL_NEWS ORDER BY S_TIME DESC LIMIT 1000'''
+    cur.execute(sql)
+    records = cur.fetchall()
+
+    # 计算总记录数和总页数
+    total_records = len(records)
+    total_pages = (total_records + per_page - 1) // per_page
+
+    # 查询当前页的记录
+    start = (page - 1) * per_page
+    end = start + per_page
+    current_records = records[start:end]
+
+    # if 'user' not in session:
+    #     return redirect(url_for('login'))
+    # user = session['user']
+    user = 'admin'
+    # cur = mysql.connection.cursor()
+    # sql = '''select NEWS_ID,TITLE,AUTHOR,CONTENT,TIME,S_TIME,SAVE_TIME,THEME,KEY_WORD,THEME_URL,GPT3_TITLE,GPT3_TEXT,NEWS_URL,PIC_URL,REMARKS,TH_ID,T_ZH,TH_ZH,KW_ZH,GT_ZH,ZH_CN,context,context_ZH,AI_img,CT_ID,img,img_name from GL_NEWS LIMIT 10'''
+    # cur.execute(sql)
+    # customers = cur.fetchall()
+    # customers = cur.fetchone()
+    return render_template('index.html', customers=current_records, user=user,
+                           total_records=total_records, total_pages=total_pages,
+                           current_page=page, per_page=per_page)
+
+
+@app.route('/<page>')
+def show_page(page):
+    if page == 'privacy':
+        return render_template('privacy.html')
+    elif page == 'cancel':
+        return render_template('cancel.html')
+    elif page == 'user':
+        return render_template('user.html')
     
-    data = {
-       "code": "OK",
-       "result":{
-        "pic_url":line.replace('\n',''),
-        "answer":line.split('/')[-1].split('.')[0]
-        }
-    }
-    # 第一种
-    response = json.dumps(data)  # 将python的字典转换为json字符串
-    return response,200,{"Content-Type":"application/json"}
+    
+    elif page == 'EN_privacy':
+        return render_template('EN_cancel.html')
+    elif page == 'EN_cancel':
+        return render_template('EN_user.html')
+    elif page == 'EN_user':
+        return render_template('EN_cancel.html')
+    else:
+        return "404 Not Found"
+ 
+
+ 
+# @app.route('/code')
+# def User_Agent():
+#     txt = open(r'/root/yan.txt', 'rb')
+#     data = txt.read().decode('utf-8')  # python3一定要加上这句不然会编码报错！
+#     txt.close()
+
+#     # 获取txt的总行数！
+#     n = data.count('\n')
+#     #print("总行数", n)
+#     # 选取随机的数
+#     i = random.randint(1, (n + 1))
+#     #print("本次使用的行数", i)
+#     ###得到对应的i行的数据
+#     line=linecache.getline(r'/root/yan.txt', i)
+#     #print(line)
+    
+#     data = {
+#        "code": "OK",
+#        "result":{
+#         "pic_url":line.replace('\n',''),
+#         "answer":line.split('/')[-1].split('.')[0]
+#         }
+#     }
+#     # 第一种
+#     response = json.dumps(data)  # 将python的字典转换为json字符串
+#     return response,200,{"Content-Type":"application/json"}
 
     
     
@@ -85,8 +142,8 @@ def User_Agent():
  
 if __name__ == '__main__':
  
-    print('dd',__name__)
- 
-    app.run(host="10.0.20.6", port=5000, debug=True)
+    # print('dd',__name__)
+    app.run(host="172.31.82.161", port=5001, debug=True)
+    # app.run(host="172.31.82.161", port=5001, debug=True)
  
 # app.run( )
